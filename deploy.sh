@@ -2,34 +2,34 @@
 set -e
 
 # Ensure active_version exists
-if [ ! -f active_version ]; then
-  echo blue > active_version
-fi
-
-current=$(cat active_version)
-if [ "$current" = "blue" ]; then
-  next="green"
-else
-  next="blue"
-fi
+[ ! -f active_version ] && echo blue > active_version
+current=$(<active_version)
+next=$([ "$current" = blue ] && echo green || echo blue)
 
 echo "🚀 Deploying $next..."
-# Build & force‐recreate the next service
-docker compose up -d --no-deps --build --force-recreate $next
 
-# Wait for health (if you’ve added HEALTHCHECKs)
-echo "⏱️ Waiting for $next to pass healthcheck..."
-until [ "$(docker inspect --format='{{.State.Health.Status}}' ${next})" = healthy ]; do
-  echo -n .
-  sleep 2
-done
-echo "✅ $next is healthy."
+# Stop & remove any existing $next container
+docker compose stop $next 2>/dev/null || true
+docker compose rm -f $next        2>/dev/null || true
 
-# Swap Nginx config
+# Build & bring up the next service
+docker compose up -d --no-deps --build $next
+
+# (Optional) Wait for healthcheck if you have one
+if docker inspect --format='{{.State.Health}}' "$next" &>/dev/null; then
+  echo "⏱️ Waiting for $next to pass healthcheck..."
+  until [ "$(docker inspect --format='{{.State.Health.Status}}' $next)" = healthy ]; do
+    echo -n .
+    sleep 2
+  done
+  echo "✅ $next is healthy."
+fi
+
+# Swap Nginx config and reload
 cp nginx/${next}.conf nginx/default.conf
 docker compose up -d --no-deps nginx
 docker exec nginx nginx -s reload
 
-# Record the new active version
+# Record & announce
 echo $next > active_version
 echo "🎉 Traffic is now on $next"
