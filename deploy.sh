@@ -17,14 +17,9 @@ echo "🔨 Building & starting '$next' service"
 docker compose up -d --no-deps --build --force-recreate "$next"
 
 # (Optional) Wait for healthcheck
-if docker inspect --format='{{.State.Health.Status}}' "$next" &>/dev/null; then
-  echo "⏱️ Waiting for $next to be healthy…"
-  until [ "$(docker inspect --format='{{.State.Health.Status}}' "$next")" = healthy ]; do
-    echo -n .
-    sleep 2
-  done
-  echo "✅ $next is healthy."
-fi
+echo "⏱️ Sleeping 5s to let $next start…"
+sleep 5
+
 
 # Swap Nginx
 echo "🔀 Swapping Nginx to point at '$next'"
