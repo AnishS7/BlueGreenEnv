@@ -1,33 +1,43 @@
 #!/usr/bin/env bash
 set -e
 
-# Ensure active_version exists
-[ ! -f active_version ] && echo blue > active_version
+# 1) Determine next color
+if [ ! -f active_version ]; then
+  echo blue > active_version
+fi
 current=$(<active_version)
 next=$([ "$current" = "blue" ] && echo green || echo blue)
 
 echo "🚀 Deploying $next…"
 
-# Remove any existing $next container
+# 2) Recreate the next app container
 echo "🛑 Removing existing '$next' container if it exists"
 docker rm -f "$next" 2>/dev/null || true
 
-# Build & start the new service
 echo "🔨 Building & starting '$next' service"
 docker compose up -d --no-deps --build --force-recreate "$next"
 
-# Swap Nginx config
+# 3) Update Nginx
 echo "🔀 Swapping Nginx to point at '$next'"
 cp nginx/"$next".conf nginx/default.conf
 
-# Remove old nginx container
-echo "🛑 Removing existing 'nginx' container if it exists"
-docker rm -f nginx 2>/dev/null || true
+echo "🔨 Recreating nginx with new config"
+docker compose up -d --no-deps --force-recreate nginx
 
-# Bring up nginx with the new config
-echo "🔨 Building & starting 'nginx' service"
-docker compose up -d --no-deps nginx
-
-# Record & announce
+# 4) Record the new state
 echo "$next" > active_version
-echo "🎉 Traffic is now on '$next'"
+echo "📝 active_version is now '$next'"
+
+# 5) Commit & push the state back to Git
+echo "🔨 Committing active_version to Git…"
+git config user.email "jenkins@ci.local"
+git config user.name  "Jenkins CI"
+
+# make sure we’re up to date before committing
+git pull --rebase origin main
+
+git add active_version
+git commit -m "ci: set active_version to $next"
+git push origin main
+
+echo "🎉 Traffic is now on '$next' and active_version pushed to repo!"
