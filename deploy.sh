@@ -7,7 +7,7 @@ current=$(cat active_version)
 next=$([ "$current" = blue ] && echo green || echo blue)
 
 echo "🚀 Deploying $next..."
-docker-compose up -d --no-deps --build $next
+docker compose up -d --no-deps --build $next
 
 # Wait until healthy
 echo "⏱️ Waiting for $next to pass healthcheck..."
@@ -19,7 +19,7 @@ echo "✅ $next is healthy."
 
 # Swap Nginx
 cp nginx/${next}.conf nginx/default.conf
-docker-compose up -d --no-deps nginx
+docker compose up -d --no-deps nginx
 docker exec nginx nginx -s reload
 
 echo $next > active_version
