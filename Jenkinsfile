@@ -1,7 +1,6 @@
 pipeline {
   agent any
   options {
-    // don’t do the automatic, built‑in checkout
     skipDefaultCheckout()
   }
   environment {
@@ -12,12 +11,11 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        // this does a real 'git clone' into the workspace
-        git(
-          url: 'https://github.com/AnishS7/BlueGreenEnv.git',
-          branch: 'main',
-          credentialsId: "${CREDENTIALS}"
-        )
+        // Wipe out any leftover files so we get a clean clone
+        deleteDir()
+        // Clone your GitHub repo into the workspace
+        git url: 'https://github.com/AnishS7/BlueGreenEnv.git',
+            branch: 'main'
       }
     }
 
@@ -54,11 +52,7 @@ pipeline {
   }
 
   post {
-    success {
-      echo '✅ Deployment succeeded!'
-    }
-    failure {
-      echo '❌ Deployment failed. Check the console output for details.'
-    }
+    success { echo '✅ Deployment succeeded!' }
+    failure { echo '❌ Deployment failed—check logs.' }
   }
 }
