@@ -30,14 +30,12 @@ docker compose up -d --no-deps nginx
 
 # Record & announce
 echo "$next" > active_version
-echo "📝 active_version is now '$next'"
+echo "🎉 Traffic is now on '$next'"
 
-# Commit & push back to Git
+# Commit & push to Git
 echo "🔨 Committing active_version to Git…"
 git config user.email "jenkins@ci.local"
 git config user.name  "Jenkins CI"
 git add active_version
 git commit -m "ci: set active_version to $next"
 git push origin main
-
-echo "🎉 Traffic is now on '$next' and active_version pushed to repo!"

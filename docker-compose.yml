@@ -1,5 +1,4 @@
 version: '3'
-
 services:
   blue:
     build:
@@ -21,13 +20,3 @@ services:
     depends_on:
       - blue
       - green
-
-  state-container:
-    image: alpine
-    container_name: state-container
-    command: ["sleep", "infinity"]
-    volumes:
-      - state:/data
-
-volumes:
-  state:
